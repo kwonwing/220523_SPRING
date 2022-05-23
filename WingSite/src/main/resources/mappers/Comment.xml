@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org/DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.example.wingsite.dao.CommentDao">
+<!--공통으로 넣어줄 문자열 (Columns)-->
+    <sql id="commentColumns">
+        IDX
+        ,BOARD_IDX
+        ,CONTENT
+        ,WRITER
+        ,DELETE_YN
+        ,INSERT_DATE AS INSERT_TIME
+        ,UPDATE_DATE AS UPDATE_TIME
+        ,DELETE_DATE AS DELETE_TIME
+    </sql>
+
+    <insert id="insertComment"
+            parameterType="com.example.wingsite.model.CommentDto">
+        INSERT INTO TB_COMMENT_KNR(
+<!--   만들어둔 공통컬럼 불러옴-->
+        IDX
+        ,BOARD_IDX
+        ,CONTENT
+        ,WRITER
+        ,DELETE_YN
+        ,INSERT_DATE
+        ,UPDATE_DATE
+        ,DELETE_DATE
+        ) VALUES(
+        SQ_TB_COMMENT.NEXTVAL
+         ,#{boardIdx}
+        ,#{content}
+        ,#{writer}
+        ,'N'
+        ,SYSDATE
+        ,null
+        ,null
+        )
+    </insert>
+
+<!--    BoardDto selectCommentDetail(Long idx);-->
+    <select id="selectCommentDetail" parameterType="long"
+            resultType="com.example.wingsite.model.CommentDto">
+        SELECT
+            <include refid="commentColumns"></include>
+        FROM TB_COMMENT_KNR
+--         데이터 실제로 삭제하지않고 표시만 하지않음
+--         DELETE_YN = 'N': 삭제되지않은거만 표시
+        WHERE DELETE_YN = 'N'
+        AND IDX = #{idx}
+    </select>
+
+
+<!--    public boolean deleteBoard(Long idx);-->
+    <update id="deleteComment" parameterType="Long" >
+        UPDATE TB_COMMENT_KNR
+        SET
+            DELETE_YN = 'Y'
+            ,DELETE_DATE = SYSDATE
+        WHERE
+            IDX = #{idx}
+    </update>
+
+<!--     List<CommentDto> selectCommentList(CommentDto params);-->
+    <select id="selectCommentList"
+            parameterType="com.example.wingsite.model.CommentDto"
+            resultType="com.example.wingsite.model.CommentDto">
+        SELECT
+            <include refid="commentColumns"></include>
+        FROM
+            TB_COMMENT_KNR
+        WHERE
+            DELETE_YN = 'N'
+        AND BOARD_IDX = #{boardIdx}
+        ORDER BY
+        IDX DESC ,
+        INSERT_TIME DESC
+    </select>
+<!--    int selectBoardTotalCount(BoardDto params);-->
+    <select id="selectCommentTotalCount"
+            parameterType="com.example.wingsite.model.CommentDto"
+            resultType="int">
+        SELECT
+            COUNT (*)
+        FROM  TB_COMMENT_KNR
+        WHERE DELETE_YN = 'N'
+    </select>
+
+<!--     int updateBoard(BoardDto params);-->
+    <update id="updateComment" parameterType="com.example.wingsite.model.CommentDto" >
+        UPDATE TB_COMMENT_KNR
+        SET
+            UPDATE_DATE=SYSDATE
+          ,CONTENT=#{content}
+          ,WRITER =#{writer}
+        WHERE
+            IDX = #{idx}
+    </update>
+
+</mapper>

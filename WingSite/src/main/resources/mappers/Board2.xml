@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org/DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.example.wingsite.dao.Board2Dao">
+<!--공통으로 넣어줄 문자열 (Columns)-->
+    <sql id="boardColumns">
+        IDX
+        ,TITLE
+        ,CONTENT
+        ,WRITER
+        ,VIEW_CNT
+        ,NOTICE_YN
+        ,SECRET_YN
+        ,DELETE_YN
+        ,INSERT_TIME
+        ,UPDATE_TIME
+        ,DELETE_TIME
+    </sql>
+
+    <insert id="insertBoard"
+            parameterType="com.example.wingsite.model.Board2Dto">
+        INSERT INTO TB_BOARD2_KNR(
+<!--   만들어둔 공통컬럼 불러옴-->
+        <include refid="boardColumns"> </include>
+        ) VALUES(
+         SQ_TB_BOARD_KNR.NEXTVAR
+         ,#{title}
+        ,#{content}
+        ,#{writer}
+        ,0
+        ,'N'
+        ,'N'
+        ,'N'
+        ,SYSDATE
+        ,null
+        ,null
+        )
+    </insert>
+
+<!--    BoardDto selectBoardDetail(Long idx);-->
+    <select id="selectBoardDetail" parameterType="long"
+            resultType="com.example.wingsite.model.Board2Dto">
+        SELECT
+            <include refid="boardColumns"></include>
+        FROM TB_BOARD2_KNR
+--         데이터 실제로 삭제하지않고 표시만 하지않음
+--         DELETE_YN = 'N': 삭제되지않은거만 표시
+        WHERE DELETE_YN = 'N'
+        AND IDX = #{idx}
+    </select>
+
+<!--    List<BoardDto> selectBoardList()-->
+    <select id="selectBoardAllList"
+            parameterType="com.example.wingsite.model.Board2Dto"
+            resultType="com.example.wingsite.model.Board2Dto">
+        SELECT
+          <include refid="boardColumns"></include>
+        FROM  TB_BOARD2_KNR
+        WHERE DELETE_YN = 'N'
+        ORDER BY
+        NOTICE_YN ASC ,
+        IDX DESC ,
+        INSERT_TIME DESC
+    </select>
+<!--    public boolean deleteBoard(Long idx);-->
+    <update id="deleteBoard" parameterType="Long" >
+        UPDATE TB_BOARD2_KNR
+        SET
+            DELETE_YN = 'Y'
+            ,DELETE_TIME = SYSDATE
+        WHERE
+            IDX = #{idx}
+    </update>
+
+<!--    int selectBoardTotalCount(BoardDto params);-->
+    <select id="selectBoardTotalCount"
+            parameterType="com.example.wingsite.model.BoardDto"
+            resultType="int">
+        SELECT
+            COUNT (*)
+        FROM  TB_BOARD2_KNR
+        WHERE DELETE_YN = 'N'
+    </select>
+
+<!--     int updateBoard(BoardDto params);-->
+    <update id="updateBoard" parameterType="com.example.wingsite.model.BoardDto" >
+        UPDATE TB_BOARD2_KNR
+        SET
+            UPDATE_TIME=SYSDATE
+            ,TITLE =#{title}
+          ,CONTENT=#{content}
+          ,WRITER =#{writer}
+<!--        NVL() =>   null이 들어오면 'N'으로 바꿔줌-->
+          ,NOTICE_YN =NVL(#{notice_yn}, 'N')
+          ,SECRET_YN =NVL(#{secret_yn}, 'N')
+    </update>
+<!--     List<BoardDto> selectBoardAllList();-->
+    <select id="selectBoardList"
+            parameterType="com.example.wingsite.model.BoardDto"
+            resultType="com.example.wingsite.model.BoardDto">
+
+        SELECT *
+        FROM (
+            SELECT  ROWNUM R,
+                    TBB.*
+            FROM TB_BOARD_KNR TBB
+            WHERE ROWNUM &lt;=#{currentPageNo}*#{recordsPerPage}
+            AND DELETE_YN = 'N'
+            ORDER BY
+                NOTICE_YN ASC,
+                IDX DESC ,
+                INSERT_TIME DESC
+             )
+            WHERE R &gt; (#{currentPageNo}-1) * #{recordsPerPage}
+        <include refid="Common.search"></include>
+    </select>
+</mapper>
